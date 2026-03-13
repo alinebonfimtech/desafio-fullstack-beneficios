@@ -1,0 +1,203 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex justify-between items-center">
+    <h2 class="text-3xl font-bold text-gray-900">Gerenciamento de Benefícios</h2>
+    <div class="flex gap-3">
+      <button (click)="openTransferModal()" class="btn-secondary">
+        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+        </svg>
+        Transferir
+      </button>
+      <button (click)="openCreateModal()" class="btn-primary">
+        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Novo Benefício
+      </button>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="error" class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+    <div class="flex items-center">
+      <svg class="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      <p class="text-red-700">{{ error }}</p>
+    </div>
+  </div>
+
+  <div *ngIf="success" class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+    <div class="flex items-center">
+      <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <p class="text-green-700">{{ success }}</p>
+    </div>
+  </div>
+
+  <!-- Search and Filters -->
+  <div class="card">
+    <div class="flex gap-4 items-end">
+      <div class="flex-1">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
+        <input 
+          type="text" 
+          [(ngModel)]="searchTerm" 
+          (keyup.enter)="filterBeneficios()"
+          placeholder="Digite o nome do benefício..."
+          class="input-field"
+        />
+      </div>
+      <button (click)="filterBeneficios()" class="btn-primary">Buscar</button>
+      <button (click)="toggleActiveFilter()" [class.btn-primary]="activeOnly" [class.btn-secondary]="!activeOnly">
+        {{ activeOnly ? 'Mostrar Todos' : 'Apenas Ativos' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="flex justify-center items-center py-12">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+  </div>
+
+  <!-- Beneficios Table -->
+  <div *ngIf="!loading" class="card overflow-hidden p-0">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let beneficio of filteredBeneficios" class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ beneficio.id }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ beneficio.nome }}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">{{ beneficio.descricao }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+              {{ formatCurrency(beneficio.valor) }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span *ngIf="beneficio.ativo" class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                Ativo
+              </span>
+              <span *ngIf="!beneficio.ativo" class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                Inativo
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <button (click)="openEditModal(beneficio)" class="text-primary-600 hover:text-primary-900 mr-3">
+                Editar
+              </button>
+              <button *ngIf="beneficio.ativo" (click)="deactivateBeneficio(beneficio.id!)" class="text-yellow-600 hover:text-yellow-900 mr-3">
+                Desativar
+              </button>
+              <button (click)="deleteBeneficio(beneficio.id!)" class="text-red-600 hover:text-red-900">
+                Deletar
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredBeneficios.length === 0">
+            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+              Nenhum benefício encontrado
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Create Modal -->
+<div *ngIf="showCreateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+  <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <h3 class="text-lg font-bold mb-4">Criar Novo Benefício</h3>
+    <form (ngSubmit)="createBeneficio()">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Nome *</label>
+        <input type="text" [(ngModel)]="currentBeneficio.nome" name="nome" required class="input-field" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+        <textarea [(ngModel)]="currentBeneficio.descricao" name="descricao" rows="3" class="input-field"></textarea>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Valor *</label>
+        <input type="number" [(ngModel)]="currentBeneficio.valor" name="valor" step="0.01" required class="input-field" />
+      </div>
+      <div class="mb-4">
+        <label class="flex items-center">
+          <input type="checkbox" [(ngModel)]="currentBeneficio.ativo" name="ativo" class="mr-2" />
+          <span class="text-sm font-medium text-gray-700">Ativo</span>
+        </label>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button type="button" (click)="closeModals()" class="btn-secondary">Cancelar</button>
+        <button type="submit" class="btn-primary">Criar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div *ngIf="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+  <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <h3 class="text-lg font-bold mb-4">Editar Benefício</h3>
+    <form (ngSubmit)="updateBeneficio()">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Nome *</label>
+        <input type="text" [(ngModel)]="editingBeneficio.nome" name="nome" required class="input-field" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+        <textarea [(ngModel)]="editingBeneficio.descricao" name="descricao" rows="3" class="input-field"></textarea>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Valor *</label>
+        <input type="number" [(ngModel)]="editingBeneficio.valor" name="valor" step="0.01" required class="input-field" />
+      </div>
+      <div class="mb-4">
+        <label class="flex items-center">
+          <input type="checkbox" [(ngModel)]="editingBeneficio.ativo" name="ativo" class="mr-2" />
+          <span class="text-sm font-medium text-gray-700">Ativo</span>
+        </label>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button type="button" (click)="closeModals()" class="btn-secondary">Cancelar</button>
+        <button type="submit" class="btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Transfer Modal -->
+<div *ngIf="showTransferModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+  <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <h3 class="text-lg font-bold mb-4">Transferir Valor</h3>
+    <form (ngSubmit)="executeTransfer()">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">De (ID) *</label>
+        <input type="number" [(ngModel)]="transferRequest.fromId" name="fromId" required class="input-field" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Para (ID) *</label>
+        <input type="number" [(ngModel)]="transferRequest.toId" name="toId" required class="input-field" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Valor *</label>
+        <input type="number" [(ngModel)]="transferRequest.amount" name="amount" step="0.01" required class="input-field" />
+      </div>
+      <div class="flex justify-end gap-3">
+        <button type="button" (click)="closeModals()" class="btn-secondary">Cancelar</button>
+        <button type="submit" class="btn-primary">Transferir</button>
+      </div>
+    </form>
+  </div>
+</div>
